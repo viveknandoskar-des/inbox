@@ -1,0 +1,623 @@
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RC Inbox — Structure B: Inner List vs Chips</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    background: #f5f6fa;
+    color: #14172e;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* ---- variant switcher (meta UI) ---- */
+  .switchbar {
+    height: 52px; background: #1c2033; color: #fff;
+    display: flex; align-items: center; justify-content: flex-start; gap: 14px;
+    padding: 0 16px;
+  }
+  .switchbar .lbl { font-size: 12px; color: #9aa3c0; font-weight: 600; white-space: nowrap; }
+  .seg { display: flex; background: #2b3049; border-radius: 9px; padding: 3px; }
+  .seg button {
+    border: none; background: none; color: #b6bdd6;
+    font-size: 12px; font-weight: 600; font-family: inherit;
+    padding: 6px 14px; border-radius: 7px; cursor: pointer;
+  }
+  .seg button.on { background: #3d4eda; color: #fff; }
+  .tradeoff { font-size: 11.5px; color: #9aa3c0; max-width: 420px; line-height: 1.35; }
+  .tradeoff b { color: #dfe3f5; }
+  .toggle {
+    width: 42px; height: 24px; border-radius: 13px;
+    background: #454b6e; cursor: pointer; position: relative;
+    transition: background .2s;
+  }
+  .toggle .knob {
+    position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; transition: left .2s;
+  }
+  .toggle.on { background: #3d4eda; }
+  .toggle.on .knob { left: 21px; }
+
+  .app { display: flex; height: calc(100vh - 52px); }
+
+  /* ---- rail ---- */
+  .rail {
+    width: 72px; background: #0d1240;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 0; gap: 4px;
+  }
+  .rail .logo { width: 38px; height: 38px; border-radius: 10px; background: #3d4eda; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 17px; margin-bottom: 6px; }
+  .rail hr { width: 34px; border: none; border-top: 1px solid #262d6b; margin: 6px 0 8px; }
+  .rit { width: 64px; padding: 8px 2px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; color: #8b93c9; cursor: pointer; position: relative; }
+  .rit .ic { font-size: 16px; }
+  .rit .lb { font-size: 8.5px; font-weight: 600; text-align: center; line-height: 1.2; }
+  .rit.on { background: #262d6b; color: #fff; }
+  .rit .badge { position: absolute; top: 2px; right: 8px; background: #e5484d; color: #fff; font-size: 9px; font-weight: 700; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .rail .gear { margin-top: auto; }
+
+  /* ---- referral rooms list ---- */
+  .col-list { width: 300px; min-width: 300px; background: #fff; border-right: 1px solid #e7e9f2; display: flex; flex-direction: column; }
+  .col-list h1 { font-size: 19px; font-weight: 800; margin: 18px 18px 12px; }
+  .search {
+    margin: 0 18px 12px; height: 38px;
+    border: 1px solid #e0e3ef; border-radius: 9px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 12px; color: #9aa1bd; font-size: 13px;
+  }
+  .chips { display: flex; gap: 7px; padding: 0 18px 13px; border-bottom: 1px solid #eef0f6; }
+  .chip { font-size: 12px; font-weight: 600; border: 1px solid #e0e3ef; background: #fff; color: #454b6e; padding: 6px 13px; border-radius: 16px; font-family: inherit; }
+  .chip.on { background: #454e94; border-color: #454e94; color: #fff; }
+  .rows { flex: 1; overflow-y: auto; }
+  .rrow { display: flex; gap: 10px; padding: 12px 16px; cursor: pointer; }
+  .rrow:hover { background: #f6f7fc; }
+  .rrow.sel { background: #eef1fd; }
+  .ntile {
+    width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; background: #eef1fd;
+  }
+  .stack { display: flex; flex-shrink: 0; }
+  .savatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; color: #fff; border: 2px solid #fff; }
+  .savatar + .savatar { margin-left: -10px; }
+  .rrow .m { flex: 1; min-width: 0; }
+  .rrow .r1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .rrow .who { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rrow .wrap { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .rrow .when { font-size: 10.5px; color: #9aa1bd; }
+  .rrow .sub { font-size: 11.5px; color: #6b7280; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rcount { background: #e5484d; color: #fff; font-size: 10px; font-weight: 700; min-width: 17px; height: 17px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .bdot { width: 8px; height: 8px; border-radius: 50%; background: #3d6bf5; flex-shrink: 0; }
+
+  /* ---- room ---- */
+  .room { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #f2f4f8; }
+  .room-head {
+    background: #fff; border-bottom: 1px solid #e7e9f2;
+    display: flex; align-items: center; gap: 11px; padding: 12px 20px; min-height: 60px;
+  }
+  .room-head .grow { flex: 1; min-width: 0; }
+  .room-head .nm { font-size: 15px; font-weight: 700; }
+  .room-head .rmeta { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .status-pill { font-size: 10.5px; font-weight: 700; padding: 4px 10px; border-radius: 12px; white-space: nowrap; background: #d9f0e4; color: #177350; }
+  .privacy { font-size: 10.5px; color: #9aa1bd; background: #fff; padding: 0 20px 8px; }
+
+  .room-body { flex: 1; display: flex; min-height: 0; }
+
+  /* B1: inner participant list */
+  .plist { width: 248px; min-width: 248px; background: #fff; border-right: 1px solid #e7e9f2; overflow-y: auto; display: none; }
+  .room.v1 .plist { display: block; }
+  .prow { display: flex; gap: 9px; padding: 10px 14px; cursor: pointer; align-items: center; }
+  .prow:hover { background: #f6f7fc; }
+  .prow.sel { background: #eef1fd; }
+  .pavatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; color: #fff; }
+  .pavatar.upd { background: #e3e7fd; color: #3d4eda; font-size: 13px; }
+  .prow .m { flex: 1; min-width: 0; }
+  .prow .who { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .prow .sub { font-size: 11px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .plabel { font-size: 10.5px; font-weight: 700; color: #9aa1bd; text-transform: uppercase; letter-spacing: .4px; padding: 12px 14px 4px; }
+
+  /* thread area */
+  .thread { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  /* B2: dropdown selector bar / B3: chips row */
+  .selbar { background: #fff; border-bottom: 1px solid #e7e9f2; padding: 8px 20px; display: none; position: relative; }
+  .room.v3 .selbar.ch { display: block; }
+  .ddbtn {
+    display: inline-flex; align-items: center; gap: 9px;
+    border: 1.5px solid #e0e3ef; background: #fff; border-radius: 10px;
+    padding: 6px 12px 6px 7px; font-size: 13px; font-weight: 600; color: #14172e;
+    cursor: pointer; font-family: inherit;
+  }
+  .ddbtn .pavatar { width: 26px; height: 26px; font-size: 9.5px; }
+  .ddbtn .chev { font-size: 10px; color: #6b7280; }
+  .ddbtn .dcount { background: #e5484d; color: #fff; font-size: 9.5px; font-weight: 700; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+
+  .pchips { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .pchip {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1.5px solid #e0e3ef; background: #fff;
+    border-radius: 20px; padding: 4px 12px 4px 5px;
+    font-size: 12.5px; font-weight: 600; color: #454b6e;
+    cursor: pointer; font-family: inherit; flex-shrink: 0;
+  }
+  .pchip .pavatar { width: 24px; height: 24px; font-size: 9.5px; }
+  .pchip.on { border-color: #3d4eda; background: #eef1fd; color: #14172e; }
+  .pchip .pdot { background: #e5484d; color: #fff; font-size: 9px; font-weight: 700; min-width: 15px; height: 15px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .pchip.more { border-style: dashed; color: #3d4eda; padding: 4px 12px; }
+
+  /* shared popover (B2 dropdown + B3 overflow) */
+  .pop {
+    position: absolute; top: 100%; left: 20px; z-index: 40;
+    width: 300px; max-height: 360px;
+    background: #fff; border: 1px solid #dfe2ee; border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(16,24,40,.18);
+    display: none; flex-direction: column; overflow: hidden;
+  }
+  .pop.open { display: flex; }
+  .pop .psearch { margin: 10px; height: 34px; border: 1px solid #e0e3ef; border-radius: 8px; display: flex; align-items: center; padding: 0 10px; gap: 7px; }
+  .pop .psearch input { border: none; outline: none; flex: 1; font-size: 12.5px; font-family: inherit; }
+  .pop .plist2 { overflow-y: auto; flex: 1; }
+
+  .msgs { flex: 1; overflow-y: auto; padding: 18px 24px; display: flex; flex-direction: column; gap: 6px; }
+  .day { align-self: center; background: #fff; border: 1px solid #e7e9f2; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 8px; margin: 8px 0; }
+  .msg { max-width: 66%; font-size: 13px; line-height: 1.5; padding: 10px 13px; border-radius: 12px; }
+  .msg.me { background: #fff; border: 1px solid #e7e9f2; align-self: flex-end; }
+  .msg.them { background: #dfe6f5; align-self: flex-start; }
+  .msg .lbl { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+  .stamp { font-size: 10px; color: #9aa1bd; margin: 2px 4px 6px; }
+  .stamp.me { align-self: flex-end; }
+  .stamp.them { align-self: flex-start; }
+  .sysmsg { align-self: center; display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #e7e9f2; border-radius: 10px; font-size: 12px; color: #454b6e; padding: 7px 13px; margin: 6px 0; }
+  .sysmsg .tm { color: #9aa1bd; font-size: 10.5px; }
+
+  /* updates timeline */
+  .tl { position: relative; max-width: 600px; margin: 0 auto; width: 100%; }
+  .tl::before { content: ""; position: absolute; left: 17px; top: 18px; bottom: 22px; width: 2px; background: #e3e6f0; }
+  .ev { position: relative; display: flex; gap: 12px; padding: 10px 0; }
+  .ev-ic { width: 34px; height: 34px; border-radius: 11px; flex-shrink: 0; background: #fff; border: 1px solid #e3e6f0; display: flex; align-items: center; justify-content: center; font-size: 14px; z-index: 1; }
+  .ev .body { flex: 1; min-width: 0; }
+  .ev .l1 { display: flex; justify-content: space-between; gap: 8px; }
+  .ev .who2 { font-size: 12.5px; }
+  .ev .who2 b { font-weight: 700; }
+  .ev .who2 .a { color: #6b7280; }
+  .ev .ewhen { font-size: 10.5px; color: #9aa1bd; }
+  .ev .detail { font-size: 12.5px; color: #454b6e; margin-top: 4px; }
+  .fieldchange { font-size: 12.5px; margin-top: 5px; background: #fff; border: 1px solid #e7e9f2; border-radius: 8px; padding: 7px 10px; display: inline-block; }
+  .fieldchange .old { color: #6b7280; }
+  .fieldchange .arr { color: #9aa1bd; margin: 0 5px; }
+  .fieldchange .new { color: #177350; font-weight: 700; }
+  .readonly-note { align-self: center; font-size: 11px; color: #9aa1bd; padding: 8px 0 2px; text-align: center; }
+
+  .composer { padding: 10px 20px 16px; }
+  .comp-card { background: #fff; border: 1px solid #e0e3ef; border-radius: 11px; display: flex; align-items: center; gap: 8px; padding: 9px 12px; }
+  .comp-card input { flex: 1; border: none; outline: none; font-size: 13px; font-family: inherit; }
+  .sendb { background: #3d4eda; color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; padding: 7px 12px; font-family: inherit; }
+
+  /* ---- profile column (hidden until requested) ---- */
+  .col-info { display: none; width: 280px; min-width: 280px; background: #fff; border-left: 1px solid #e7e9f2; overflow-y: auto; }
+  .col-info.open { display: block; }
+  .pfbtn {
+    font-size: 12px; font-weight: 600; color: #3d4eda;
+    background: #fff; border: 1px solid #cdd5f8; border-radius: 8px;
+    padding: 5px 12px; cursor: pointer; font-family: inherit; white-space: nowrap;
+  }
+  .pfbtn.on { background: #e3e7fd; }
+  .pf { padding: 22px 18px; }
+  .pf-avatar { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; }
+  .pf-name { text-align: center; font-size: 15px; font-weight: 800; }
+  .pf-name .v { display: inline-flex; width: 13px; height: 13px; border-radius: 50%; background: #2742c8; color: #fff; font-size: 7.5px; align-items: center; justify-content: center; vertical-align: 1px; margin-left: 4px; }
+  .pf-loc { text-align: center; font-size: 11.5px; color: #6b7280; margin: 3px 0 12px; }
+  .pf-h { font-size: 13px; font-weight: 800; margin: 16px 0 8px; padding-top: 14px; border-top: 1px solid #eef0f6; }
+  .pf-stat { background: #f4f5f8; border-radius: 9px; text-align: center; padding: 10px; margin-bottom: 7px; }
+  .pf-stat .n { font-size: 14.5px; font-weight: 800; }
+  .pf-stat .l { font-size: 9.5px; font-weight: 600; letter-spacing: .3px; color: #6b7280; text-transform: uppercase; margin-top: 1px; }
+  .pf-row { padding: 7px 0; border-bottom: 1px solid #f3f4f7; font-size: 12.5px; }
+  .pf-row .k { color: #6b7280; font-size: 11px; margin-bottom: 2px; }
+</style>
+
+<div class="switchbar">
+  <div class="seg">
+    <button id="v1btn" class="on" onclick="setVariant(1)">Option 1 — a 2nd nav</button>
+    <button id="v3btn" onclick="setVariant(3)">Option 2 — chips at top</button>
+  </div>
+  <span class="lbl" style="margin-left:14px;">⚡ Stress test</span>
+  <div class="toggle" id="stressToggle" onclick="toggleStress()"><div class="knob"></div></div>
+</div>
+
+<div class="app">
+  <div class="rail">
+    <div class="logo">🏠</div>
+    <hr>
+    <div class="rit"><span class="ic">🌐</span><span class="lb">Discover Referrals</span></div>
+    <div class="rit"><span class="ic">👥</span><span class="lb">Find An Agent</span></div>
+    <div class="rit"><span class="ic">📋</span><span class="lb">My Referrals</span></div>
+    <div class="rit on"><span class="ic">📥</span><span class="lb">Inbox</span><span class="badge">18</span></div>
+    <div class="rit gear"><span class="ic">⚙️</span></div>
+  </div>
+
+  <!-- rooms list -->
+  <div class="col-list">
+    <h1>Inbox</h1>
+    <div class="search">🔍 Search</div>
+    <div class="chips">
+      <button class="chip" onclick="setTabV('general', this)">General</button>
+      <button class="chip on" onclick="setTabV('referral', this)">Referrals Related</button>
+    </div>
+    <div class="rows" id="rooms"></div>
+  </div>
+
+  <!-- room -->
+  <div class="room v1" id="room">
+    <div class="room-head" id="roomHead"></div>
+    <div class="privacy" id="privacyLine">🔒 Each applicant only sees their own 1:1 conversation with you.</div>
+
+    <!-- chips bar (baseline) -->
+    <div class="selbar ch" id="chBar">
+      <div class="pchips" id="chChips"></div>
+    </div>
+
+    <div class="room-body">
+      <!-- B1 inner list -->
+      <div class="plist" id="plist"></div>
+      <div class="thread">
+        <div class="msgs" id="msgs"></div>
+        <div class="composer" id="composerBox">
+          <div class="comp-card">
+            <input placeholder="Type something" id="chInput">
+            <button class="sendb">▷ Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- profile / referral details -->
+  <div class="col-info" id="colInfo"><div class="pf" id="pf"></div></div>
+</div>
+
+<script>
+  // ---------- data ----------
+  const NAMES = ['Riley Green','Elle Woods','Sabrina Carpenter','Kacey Musgraves','Chris Stapleton','Lainey Wilson','Zach Bryan','Maren Morris','Thomas Rhett','Kelsea Ballerini','Jon Pardi','Ashley McBryde','Cody Johnson','Carly Pearce','Parker McCollum','Gabby Barrett','Russell Dickerson','Jordan Davis'];
+  const PALETTE = ['#14532d','#0e7490','#6d28d9','#b45309','#b45368','#4a2b8f','#3d4eda','#177350','#92600a','#334155'];
+
+  const PARTS = NAMES.map((name, i) => ({
+    key: 'p' + i, name,
+    initials: name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(),
+    color: PALETTE[i % PALETTE.length],
+    when: i === 0 ? '2:10 PM' : i < 5 ? 'Yesterday' : 'Jun ' + (20 - i),
+    unread: i === 0 || i === 3 || i === 7,
+    count: i === 0 ? 2 : i === 3 ? 3 : i === 7 ? 1 : 0,
+    last: i === 0 ? "That's exactly what they're after. Sen…" : 'Hi! I applied on your referral — I work…',
+    recency: i,
+  }));
+
+  const THREADS = {};
+  PARTS.forEach((p, i) => {
+    THREADS[p.key] = i === 0 ?
+      [['day','Sun, May 26'],
+       ['me','',"Hey Riley, Tom here! I've got a buyer relocating to your area, around $450K, two kids in elementary school. Is that a fit for you?",'10:34 AM'],
+       ['day','Sun, May 27'],
+       ['them','Riley Green (Agent)','Hi Tom! Definitely a fit, I work that range a lot. Roosevelt is the standout district and right in their budget. Happy to take great care of them.','03:20 PM'],
+       ['me','',"That's exactly what they're after. Sending the referral over now.",'04:27 PM']] :
+      [['day', p.when === 'Yesterday' ? 'Yesterday' : p.when],
+       ['them', p.name + ' (Agent)', 'Hi! I applied on your referral — I work this market actively and would love the chance.', '10:0' + (i % 10) + ' AM'],
+       ['me', '', 'Thanks — reviewing applicants this week, will get back to you.', '11:1' + (i % 10) + ' AM']];
+  });
+
+  const ROOM = {
+    name: 'Fort Walton Beach, Florida', meta: 'Buyer · $90k – 900k · 6-12 months', status: 'Applied',
+    updatesUnread: true,
+    updates: [
+      { icon:'👤', actor:'Elle Woods', a:'applied to your referral', when:'5 hours ago', detail:'Boston, MA · $250k – $900k range · 14 listings.' },
+      { icon:'🕐', actor:'Referral Central', a:'updated', when:'6 hours ago', field:{ k:'Applicants', old:'39', nw:'47' } },
+      { icon:'✍️', actor:'Riley Green', a:'signed the referral agreement', when:'May 27', field:{ k:'Agreement', old:'Unsigned', nw:'Partially signed (1 of 2)' } },
+    ],
+  };
+  const OTHER_ROOMS = [
+    ['Birmingham, Alabama 1','Buyer · $500k – 780k','5 applicants in conversation', 6, false],
+    ['Destin, Florida','Buyer · $300k – 650k','3 applicants in conversation', 0, true],
+    ['Gulf Shores, Alabama','Seller · $420k – 480k','4 applicants in conversation', 0, false],
+    ['Pensacola, Florida','Buyer · $180k – 400k','3 applicants in conversation', 2, false],
+    ['Mobile, Alabama','Buyer · $250k – 520k','4 applicants in conversation', 0, false],
+    ['Tallahassee, Florida','Seller · $310k – 360k','3 applicants in conversation', 0, true],
+    ['Savannah, Georgia','Buyer · $500k – 900k','4 applicants in conversation', 1, false],
+  ];
+
+  // ---------- General tab: 1:1 convos, no referral tied ----------
+  const GENERAL = [
+    { key:'g0', name:'Brett Young', initials:'BY', color:'#4a2b8f', when:'Mar 6', unread:true, count:8, recency:0,
+      last:"Great, I've accepted the referral. I'll re…" },
+    { key:'g1', name:'Miranda Lambert', initials:'ML', color:'#b45368', when:'Apr 30', unread:true, count:6, recency:1,
+      last:"Fantastic, I've shared the referral deta…" },
+    { key:'g2', name:'Luke Combs', initials:'LC', color:'#b45309', when:'Apr 22', unread:false, count:0, recency:2,
+      last:"I'm evaluating the latest referral you s…" },
+  ];
+  THREADS.g0 = [['day','Wed, Mar 6'],
+    ['them','Brett Young (Agent)',"Great, I've accepted the referral. I'll reach out to your client this afternoon.",'02:15 PM']];
+  THREADS.g1 = [['day','Tue, Apr 30'],
+    ['them','Miranda Lambert (Agent)',"Fantastic, I've shared the referral details with my team. We'll take it from here!",'09:48 AM'],
+    ['me','','Great — keep me posted on first contact.','10:02 AM']];
+  THREADS.g2 = [['day','Tue, Apr 22'],
+    ['them','Luke Combs (Agent)',"I'm evaluating the latest referral you sent over. Will confirm by Friday.",'01:05 PM']];
+
+  let variant = 1;
+  let tab = 'referral';
+  let selP = 'p0'; // selected participant key, or '_updates'
+  let selG = 'g0'; // selected general convo
+  let stressOn = false;
+  let infoOpen = false;
+
+  function setTabV(t, btn) {
+    tab = t;
+    document.querySelectorAll('.chips .chip').forEach(c => c.classList.remove('on'));
+    btn.classList.add('on');
+    const room = document.getElementById('room');
+    if (t === 'general') {
+      room.className = 'room'; // no inner list, no chips bar
+      document.getElementById('privacyLine').style.display = 'none';
+    } else {
+      room.className = 'room v' + variant;
+      document.getElementById('privacyLine').style.display = 'block';
+    }
+    refresh();
+  }
+
+  function parts() { return stressOn ? PARTS : PARTS.slice(0, 3); }
+
+  function toggleStress() {
+    stressOn = !stressOn;
+    if (!stressOn && selP !== '_updates' && !parts().find(p => p.key === selP)) selP = 'p0';
+    document.getElementById('stressToggle').classList.toggle('on', stressOn);
+    refresh();
+  }
+
+  function infoBtnHtml(label) {
+    return '<button class="pfbtn' + (infoOpen ? ' on' : '') + '" onclick="toggleInfo()">👤 ' + label + '</button>';
+  }
+  function toggleInfo() {
+    infoOpen = !infoOpen;
+    document.getElementById('colInfo').classList.toggle('open', infoOpen);
+    document.querySelectorAll('.pfbtn').forEach(b => b.classList.toggle('on', infoOpen));
+  }
+
+  // ---------- rooms list ----------
+  function renderRooms() {
+    const el = document.getElementById('rooms');
+    el.innerHTML = '';
+    if (tab === 'general') {
+      GENERAL.forEach(g => {
+        const d = document.createElement('div');
+        d.className = 'rrow' + (selG === g.key ? ' sel' : '');
+        d.innerHTML =
+          '<div class="savatar" style="width:34px;height:34px;border:none;background:' + g.color + '">' + g.initials + '</div>' +
+          '<div class="m"><div class="r1"><span class="who">' + g.name + '</span><span class="wrap"><span class="when">' + g.when + '</span>' +
+          (g.unread ? '<span class="rcount">' + g.count + '</span>' : '') + '</span></div>' +
+          '<div class="sub">' + g.last + '</div></div>';
+        d.onclick = () => { g.unread = false; g.count = 0; selG = g.key; refresh(); };
+        el.appendChild(d);
+      });
+      return;
+    }
+    const totalUnread = parts().reduce((n, p) => n + (p.unread ? p.count : 0), 0);
+    const hot = document.createElement('div');
+    hot.className = 'rrow sel';
+    hot.innerHTML =
+      '<div class="ntile">🏠</div>' +
+      '<div class="m"><div class="r1"><span class="who">' + ROOM.name + '</span><span class="wrap"><span class="when">2:10 PM</span>' +
+      (totalUnread ? '<span class="rcount">' + totalUnread + '</span>' : '') + (ROOM.updatesUnread ? '<span class="bdot"></span>' : '') + '</span></div>' +
+      '<div class="sub">' + parts().length + ' applicants in conversation</div></div>';
+    el.appendChild(hot);
+    OTHER_ROOMS.forEach(([name, meta, sub, cnt, dot], i) => {
+      const d = document.createElement('div');
+      d.className = 'rrow';
+      d.innerHTML =
+        '<div class="ntile">🏠</div>' +
+        '<div class="m"><div class="r1"><span class="who">' + name + '</span><span class="wrap"><span class="when">Jun ' + (18 - i) + '</span>' +
+        (cnt ? '<span class="rcount">' + cnt + '</span>' : '') + (dot ? '<span class="bdot"></span>' : '') + '</span></div>' +
+        '<div class="sub">' + sub + '</div></div>';
+      el.appendChild(d);
+    });
+  }
+
+  // ---------- sorted participants: unread first, then recency ----------
+  function sortedParts() {
+    return [...parts()].sort((a, b) => (b.unread - a.unread) || (a.recency - b.recency));
+  }
+
+  // ---------- room head ----------
+  function renderHead() {
+    document.getElementById('roomHead').innerHTML =
+      '<div class="grow"><div class="nm">' + ROOM.name + '</div><div class="rmeta">' + ROOM.meta + ' · ' + parts().length + ' applicants</div></div>' +
+      '<span class="status-pill">' + ROOM.status + '</span>' +
+      infoBtnHtml(selP === '_updates' ? 'Referral details' : 'Profile');
+  }
+
+  // ---------- participant row (shared by B1 list + popovers) ----------
+  function partRow(p) {
+    const d = document.createElement('div');
+    d.className = 'prow' + (selP === p.key ? ' sel' : '');
+    d.innerHTML =
+      '<div class="pavatar" style="background:' + p.color + '">' + p.initials + '</div>' +
+      '<div class="m"><div class="who">' + p.name + '</div><div class="sub">' + p.last + '</div></div>' +
+      (p.unread ? '<span class="rcount">' + p.count + '</span>' : '');
+    d.onclick = () => selectPart(p.key);
+    return d;
+  }
+  function updatesRow() {
+    const d = document.createElement('div');
+    d.className = 'prow' + (selP === '_updates' ? ' sel' : '');
+    d.innerHTML =
+      '<div class="pavatar upd">🔔</div>' +
+      '<div class="m"><div class="who">Referral updates</div><div class="sub">General — not tied to any person</div></div>' +
+      (ROOM.updatesUnread ? '<span class="bdot"></span>' : '');
+    d.onclick = () => { ROOM.updatesUnread = false; selectPart('_updates'); };
+    return d;
+  }
+
+  // ---------- B1 inner list ----------
+  function renderPlist() {
+    const el = document.getElementById('plist');
+    el.innerHTML = '';
+    el.appendChild(updatesRow());
+    const lbl = document.createElement('div');
+    lbl.className = 'plabel'; lbl.textContent = 'Applicants (' + parts().length + ')';
+    el.appendChild(lbl);
+    sortedParts().forEach(p => el.appendChild(partRow(p)));
+  }
+
+  // ---------- chips (baseline) — all participants as chips, wrapping ----------
+  function renderChips() {
+    const el = document.getElementById('chChips');
+    el.innerHTML = '';
+    const ub = document.createElement('button');
+    ub.className = 'pchip' + (selP === '_updates' ? ' on' : '');
+    ub.innerHTML = '<span class="pavatar upd">🔔</span>Updates' + (ROOM.updatesUnread ? '<span class="bdot"></span>' : '');
+    ub.onclick = () => { ROOM.updatesUnread = false; selectPart('_updates'); };
+    el.appendChild(ub);
+
+    sortedParts().forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'pchip' + (selP === p.key ? ' on' : '');
+      b.innerHTML = '<span class="pavatar" style="background:' + p.color + '">' + p.initials + '</span>' + p.name +
+        (p.unread ? '<span class="pdot">' + p.count + '</span>' : '');
+      b.onclick = () => selectPart(p.key);
+      el.appendChild(b);
+    });
+  }
+
+  // ---------- thread / updates / profile ----------
+  function renderThread(key) {
+    const msgs = document.getElementById('msgs');
+    msgs.innerHTML = '';
+    if (key === 'p0') {
+      // person-specific echo demo
+    }
+    THREADS[key].forEach(m => {
+      if (m[0] === 'day') {
+        const d = document.createElement('div'); d.className = 'day'; d.textContent = m[1]; msgs.appendChild(d);
+      } else {
+        const b = document.createElement('div');
+        b.className = 'msg ' + m[0];
+        b.innerHTML = (m[1] ? '<div class="lbl">' + m[1] + '</div>' : '') + m[2];
+        msgs.appendChild(b);
+        const st = document.createElement('div'); st.className = 'stamp ' + m[0]; st.textContent = m[3]; msgs.appendChild(st);
+      }
+    });
+    if (key === 'p0') {
+      const sy = document.createElement('div');
+      sy.className = 'sysmsg';
+      sy.innerHTML = '<span>✍️</span><span>Riley Green signed the referral agreement</span><span class="tm">May 27, 4:40 PM</span>';
+      msgs.appendChild(sy);
+    }
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+  // one "applied" notification per applicant, plus referral-level system events
+  function genUpdates() {
+    const evs = [];
+    parts().forEach((p, i) => {
+      evs.push({
+        icon:'👤', actor: p.name, a:'applied to your referral',
+        when: p.when === '2:10 PM' ? '2 hours ago' : p.when,
+        detail: 'Applied via Discover Referrals · $' + (200 + p.recency * 20) + 'k – $' + (600 + p.recency * 25) + 'k range · ' + (8 + p.recency) + ' listings.',
+      });
+    });
+    evs.splice(1, 0, { icon:'🕐', actor:'Referral Central', a:'updated', when:'2 hours ago',
+      field:{ k:'Applicants', old: String(46), nw: String(46 + parts().length - 2) } });
+    evs.push({ icon:'✍️', actor:'Riley Green', a:'signed the referral agreement', when:'May 27',
+      field:{ k:'Agreement', old:'Unsigned', nw:'Partially signed (1 of 2)' } });
+    return evs;
+  }
+
+  function renderUpdates() {
+    const msgs = document.getElementById('msgs');
+    msgs.innerHTML = '';
+    const tl = document.createElement('div');
+    tl.className = 'tl';
+    tl.innerHTML = genUpdates().map(e => {
+      let body = '<div class="l1"><span class="who2"><b>' + e.actor + '</b> <span class="a">' + e.a + '</span></span><span class="ewhen">' + e.when + '</span></div>';
+      if (e.detail) body += '<div class="detail">' + e.detail + '</div>';
+      if (e.field) body += '<div class="fieldchange">' + e.field.k + ': <span class="old">' + e.field.old + '</span><span class="arr">→</span><span class="new">' + e.field.nw + '</span></div>';
+      return '<div class="ev"><div class="ev-ic">' + e.icon + '</div><div class="body">' + body + '</div></div>';
+    }).join('');
+    msgs.appendChild(tl);
+    const n = document.createElement('div');
+    n.className = 'readonly-note';
+    n.textContent = 'Read-only — general updates about this referral, not tied to any person.';
+    msgs.appendChild(n);
+    msgs.scrollTop = 0;
+  }
+  function renderProfile(key) {
+    const el = document.getElementById('pf');
+    if (key === '_updates') {
+      el.innerHTML =
+        '<div class="pf-h" style="margin-top:0;padding-top:0;border-top:none;">Referral Details</div>' +
+        '<div style="margin-bottom:10px;"><span class="status-pill">' + ROOM.status + '</span></div>' +
+        '<div class="pf-row"><div class="k">Referral</div><div>' + ROOM.name + '</div></div>' +
+        '<div class="pf-row"><div class="k">Details</div><div>' + ROOM.meta + '</div></div>' +
+        '<div class="pf-row"><div class="k">Referral Fee</div><div>25%</div></div>' +
+        '<div class="pf-row"><div class="k">Applicants</div><div>' + PARTS.length + ' in conversation · 47+ applied</div></div>';
+      return;
+    }
+    const p = PARTS.find(x => x.key === key) || GENERAL.find(x => x.key === key);
+    el.innerHTML =
+      '<div class="pf-avatar" style="background:' + p.color + '">' + p.initials + '</div>' +
+      '<div class="pf-name"><span>' + p.name + '</span><span class="v">✓</span></div>' +
+      '<div class="pf-loc">📍 United States</div>' +
+      '<div class="pf-h">Production Data</div>' +
+      '<div class="pf-stat"><div class="n">💵 ' + (4 + p.recency % 7) + '.2m</div><div class="l">12 Month Sales Volume</div></div>' +
+      '<div class="pf-stat"><div class="n">📋 ' + (10 + p.recency) + '</div><div class="l">Listings Created</div></div>' +
+      '<div class="pf-stat"><div class="n">🏠 ' + (5 + p.recency % 9) + '</div><div class="l">Properties Sold</div></div>' +
+      '<div class="pf-row"><div class="k">Price Range</div><div>$200k – $800k</div></div>' +
+      '<div class="pf-row"><div class="k">Average Price</div><div>$' + (350 + p.recency * 10) + 'k</div></div>';
+  }
+
+  // ---------- selection + variant ----------
+  function selectPart(key) {
+    selP = key;
+    if (key !== '_updates') {
+      const p = PARTS.find(x => x.key === key);
+      p.unread = false; p.count = 0;
+    }
+    refresh();
+  }
+  function refresh() {
+    if (tab === 'general') {
+      const g = GENERAL.find(x => x.key === selG);
+      document.getElementById('roomHead').innerHTML =
+        '<div class="savatar" style="width:36px;height:36px;border:none;background:' + g.color + '">' + g.initials + '</div>' +
+        '<div class="grow"><div class="nm">' + g.name + '</div><div class="rmeta">Direct message · no referral tied</div></div>' +
+        infoBtnHtml('Profile');
+      renderThread(selG);
+      document.getElementById('composerBox').style.display = 'block';
+      document.getElementById('chInput').placeholder = 'Message ' + g.name + '…';
+      renderProfile(selG);
+      renderRooms();
+      return;
+    }
+    renderHead();
+    if (variant === 1) renderPlist();
+    if (variant === 3) renderChips();
+    if (selP === '_updates') {
+      renderUpdates();
+      document.getElementById('composerBox').style.display = 'none';
+    } else {
+      renderThread(selP);
+      document.getElementById('composerBox').style.display = 'block';
+      document.getElementById('chInput').placeholder = 'Message ' + PARTS.find(x => x.key === selP).name + '…';
+    }
+    renderProfile(selP);
+    renderRooms();
+  }
+  function setVariant(v) {
+    variant = v;
+    const room = document.getElementById('room');
+    room.className = 'room v' + v;
+    [1, 3].forEach(k => document.getElementById('v' + k + 'btn').classList.toggle('on', k === v));
+    refresh();
+  }
+
+  setVariant(1);
+</script>

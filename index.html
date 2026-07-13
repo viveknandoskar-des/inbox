@@ -93,7 +93,49 @@
   .bdot { width: 8px; height: 8px; border-radius: 50%; background: #3d6bf5; flex-shrink: 0; }
 
   /* ---- room ---- */
-  .room { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #f2f4f8; }
+  .room { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #f2f4f8; position: relative; }
+
+  /* Option 3 — fold-by-fold selector */
+  .headsel {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: none; border: none; font-family: inherit; cursor: pointer;
+    font-size: 15px; font-weight: 700; color: #14172e;
+    padding: 3px 8px; margin-left: -8px; border-radius: 8px;
+  }
+  .headsel:hover { background: #f1f3fa; }
+  .headsel .chev { font-size: 10px; color: #6b7280; }
+  .foldpop {
+    position: absolute; top: 62px; left: 16px; z-index: 40;
+    width: 330px; max-height: 400px; overflow-y: auto;
+    background: #fff; border: 1px solid #dfe2ee; border-radius: 14px;
+    box-shadow: 0 18px 44px rgba(16,24,40,.2);
+    display: none; padding: 6px 0 8px;
+  }
+  .foldpop.open { display: block; }
+  .flabel {
+    font-size: 10.5px; font-weight: 700; color: #9aa1bd;
+    letter-spacing: .5px; text-transform: uppercase; padding: 12px 16px 5px;
+  }
+
+  /* Option 4 — full-pane drill-in menu */
+  .msgs.menu-mode { padding: 0; gap: 0; }
+  .menucard {
+    flex: 1; width: 100%;
+    background: #fff;
+    padding: 4px 0 10px;
+    overflow-y: auto;
+  }
+  .menucard .prow { padding: 14px 24px; }
+  .menucard .prow .who { font-size: 13.5px; }
+  .menucard .prow .sub { font-size: 12px; }
+  .menucard .pavatar { width: 38px; height: 38px; font-size: 12px; }
+  .menucard .flabel { padding: 16px 24px 6px; }
+  .backbtn {
+    width: 32px; height: 32px; border: none; background: none; border-radius: 8px;
+    font-size: 16px; color: #454b6e; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .backbtn:hover { background: #f1f3fa; }
   .room-head {
     background: #fff; border-bottom: 1px solid #e7e9f2;
     display: flex; align-items: center; gap: 11px; padding: 12px 20px; min-height: 60px;
@@ -222,6 +264,8 @@
   <div class="seg">
     <button id="v1btn" class="on" onclick="setVariant(1)">Option 1 — a 2nd nav</button>
     <button id="v3btn" onclick="setVariant(3)">Option 2 — chips at top</button>
+    <button id="v5btn" onclick="setVariant(5)">Option 3 — fold by fold</button>
+    <button id="v6btn" onclick="setVariant(6)">Option 4 — menu drill-in</button>
   </div>
   <span class="lbl" style="margin-left:14px;">⚡ Stress test</span>
   <div class="toggle" id="stressToggle" onclick="toggleStress()"><div class="knob"></div></div>
@@ -252,6 +296,7 @@
   <!-- room -->
   <div class="room v1" id="room">
     <div class="room-head" id="roomHead"></div>
+    <div class="foldpop" id="foldPop"></div>
     <div class="privacy" id="privacyLine">🔒 Each applicant only sees their own 1:1 conversation with you.</div>
 
     <!-- chips bar (baseline) -->
@@ -358,6 +403,7 @@
     if (t === 'general') {
       room.className = 'room'; // no inner list, no chips bar
       document.getElementById('privacyLine').style.display = 'none';
+      closeFold();
     } else {
       room.className = 'room v' + variant;
       document.getElementById('privacyLine').style.display = 'block';
@@ -369,7 +415,7 @@
 
   function toggleStress() {
     stressOn = !stressOn;
-    if (!stressOn && selP !== '_updates' && !parts().find(p => p.key === selP)) selP = 'p0';
+    if (!stressOn && selP && selP !== '_updates' && !parts().find(p => p.key === selP)) selP = 'p0';
     document.getElementById('stressToggle').classList.toggle('on', stressOn);
     refresh();
   }
@@ -429,10 +475,75 @@
 
   // ---------- room head ----------
   function renderHead() {
+    if (variant === 6) {
+      if (selP === null) {
+        document.getElementById('roomHead').innerHTML =
+          '<div class="grow"><div class="nm">📍 ' + ROOM.name + '</div><div class="rmeta">' + ROOM.meta + ' · ' + parts().length + ' applicants</div></div>' +
+          '<span class="status-pill">' + ROOM.status + '</span>';
+      } else {
+        const label = selP === '_updates' ? '🔔 Referral updates' : PARTS.find(x => x.key === selP).name;
+        document.getElementById('roomHead').innerHTML =
+          '<button class="backbtn" onclick="backToMenu()">←</button>' +
+          '<div class="grow"><div class="nm">' + label + '</div><div class="rmeta">' + ROOM.name + '</div></div>' +
+          infoBtnHtml(selP === '_updates' ? 'Referral details' : 'Profile');
+      }
+      return;
+    }
+    if (variant === 5) {
+      let label;
+      if (selP === null) label = '📍 ' + ROOM.name;
+      else if (selP === '_updates') label = '🔔 Referral updates';
+      else label = PARTS.find(x => x.key === selP).name;
+      document.getElementById('roomHead').innerHTML =
+        '<button class="headsel" onclick="toggleFold()">' + label + ' <span class="chev">▾</span></button>' +
+        '<span class="grow"></span>' +
+        (selP === null ? '' : infoBtnHtml(selP === '_updates' ? 'Referral details' : 'Profile'));
+      renderFold();
+      return;
+    }
     document.getElementById('roomHead').innerHTML =
       '<div class="grow"><div class="nm">' + ROOM.name + '</div><div class="rmeta">' + ROOM.meta + ' · ' + parts().length + ' applicants</div></div>' +
       '<span class="status-pill">' + ROOM.status + '</span>' +
       infoBtnHtml(selP === '_updates' ? 'Referral details' : 'Profile');
+  }
+
+  // ---------- Option 3: fold selector ----------
+  function renderFold() {
+    const pop = document.getElementById('foldPop');
+    const keep = pop.classList.contains('open');
+    pop.innerHTML = '';
+    pop.appendChild(updatesRow());
+    const lbl = document.createElement('div');
+    lbl.className = 'flabel'; lbl.textContent = 'Applicants (' + parts().length + ')';
+    pop.appendChild(lbl);
+    sortedParts().forEach(p => pop.appendChild(partRow(p)));
+    pop.classList.toggle('open', keep);
+  }
+  function toggleFold() {
+    document.getElementById('foldPop').classList.toggle('open');
+  }
+  function closeFold() {
+    document.getElementById('foldPop').classList.remove('open');
+  }
+
+  // ---------- Option 4: centered menu + back navigation ----------
+  function renderMenu() {
+    const msgs = document.getElementById('msgs');
+    msgs.classList.add('menu-mode');
+    msgs.innerHTML = '';
+    const card = document.createElement('div');
+    card.className = 'menucard';
+    card.appendChild(updatesRow());
+    const lbl = document.createElement('div');
+    lbl.className = 'flabel'; lbl.textContent = 'Applicants (' + parts().length + ')';
+    card.appendChild(lbl);
+    sortedParts().forEach(p => card.appendChild(partRow(p)));
+    msgs.appendChild(card);
+    msgs.scrollTop = 0;
+  }
+  function backToMenu() {
+    selP = null;
+    refresh();
   }
 
   // ---------- participant row (shared by B1 list + popovers) ----------
@@ -491,6 +602,7 @@
   // ---------- thread / updates / profile ----------
   function renderThread(key) {
     const msgs = document.getElementById('msgs');
+    msgs.classList.remove('menu-mode');
     msgs.innerHTML = '';
     if (key === 'p0') {
       // person-specific echo demo
@@ -533,6 +645,7 @@
 
   function renderUpdates() {
     const msgs = document.getElementById('msgs');
+    msgs.classList.remove('menu-mode');
     msgs.innerHTML = '';
     const tl = document.createElement('div');
     tl.className = 'tl';
@@ -581,6 +694,7 @@
       const p = PARTS.find(x => x.key === key);
       p.unread = false; p.count = 0;
     }
+    closeFold();
     refresh();
   }
   function refresh() {
@@ -600,6 +714,19 @@
     renderHead();
     if (variant === 1) renderPlist();
     if (variant === 3) renderChips();
+    if (variant === 5 && selP === null) {
+      const msgs = document.getElementById('msgs');
+      msgs.innerHTML = '<div class="readonly-note" style="margin:auto;">Choose “Referral updates” or an applicant from the list above ▾</div>';
+      document.getElementById('composerBox').style.display = 'none';
+      renderRooms();
+      return;
+    }
+    if (variant === 6 && selP === null) {
+      renderMenu();
+      document.getElementById('composerBox').style.display = 'none';
+      renderRooms();
+      return;
+    }
     if (selP === '_updates') {
       renderUpdates();
       document.getElementById('composerBox').style.display = 'none';
@@ -615,7 +742,20 @@
     variant = v;
     const room = document.getElementById('room');
     room.className = 'room v' + v;
-    [1, 3].forEach(k => document.getElementById('v' + k + 'btn').classList.toggle('on', k === v));
+    [1, 3, 5, 6].forEach(k => document.getElementById('v' + k + 'btn').classList.toggle('on', k === v));
+    if (v === 5) {
+      selP = null;
+      refresh();
+      document.getElementById('foldPop').classList.add('open'); // fold opens on entry
+      return;
+    }
+    closeFold();
+    if (v === 6) {
+      selP = null; // land on the menu
+      refresh();
+      return;
+    }
+    if (selP === null) selP = 'p0';
     refresh();
   }
 

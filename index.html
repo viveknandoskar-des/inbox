@@ -558,11 +558,12 @@
     return d;
   }
   function updatesRow() {
+    const latest = genUpdates()[0];
     const d = document.createElement('div');
     d.className = 'prow' + (selP === '_updates' ? ' sel' : '');
     d.innerHTML =
       '<div class="pavatar upd">🔔</div>' +
-      '<div class="m"><div class="who">Referral updates</div><div class="sub">General — not tied to any person</div></div>' +
+      '<div class="m"><div class="who">Referral updates</div><div class="sub">' + latest.actor + ' ' + latest.a + '</div></div>' +
       (ROOM.updatesUnread ? '<span class="bdot"></span>' : '');
     d.onclick = () => { ROOM.updatesUnread = false; selectPart('_updates'); };
     return d;
@@ -658,7 +659,7 @@
     msgs.appendChild(tl);
     const n = document.createElement('div');
     n.className = 'readonly-note';
-    n.textContent = 'Read-only — general updates about this referral, not tied to any person.';
+    n.textContent = 'To reply to an applicant, open their conversation.';
     msgs.appendChild(n);
     msgs.scrollTop = 0;
   }

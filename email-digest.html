@@ -1,0 +1,240 @@
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RC 1.3 — Unread Digest Email (Real Shell)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 36px 24px 80px;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    background: #b9ccf5; color: #14172e;
+    -webkit-font-smoothing: antialiased;
+  }
+  .stage { display: flex; gap: 40px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+  .col { }
+  .frame-label {
+    background: #fff; border: 2px solid #2b2f77; border-radius: 4px;
+    text-align: center; font-size: 20px; font-weight: 800; color: #2b2f77;
+    padding: 10px 0; margin-bottom: 18px;
+  }
+  .scenario { font-size: 12.5px; color: #3c4a86; margin-bottom: 8px; }
+
+  /* ---- email shell (Real 1.2 set) ---- */
+  .email {
+    background: #fff; overflow: hidden;
+    box-shadow: 0 10px 30px rgba(16,24,40,.15);
+    border-radius: 4px;
+  }
+  .w-desktop { width: 560px; }
+  .w-mobile { width: 375px; }
+
+  .ehead {
+    background: #101031; padding: 16px 0; display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .wordmark {
+    border: 1.5px solid #fff; color: #fff; font-size: 15px; font-weight: 700;
+    letter-spacing: 1px; padding: 3px 12px; transform: scaleX(-1);
+  }
+  .rcicon {
+    width: 26px; height: 26px; border-radius: 6px; background: #3d4eda; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+  }
+
+  .ebody { background: linear-gradient(#e9eefb, #f6f8fd); padding: 30px 34px 34px; text-align: center; }
+  .w-mobile .ebody { padding: 26px 20px 28px; }
+  .eillo { font-size: 44px; margin-bottom: 10px; }
+  .ebody h1 { font-size: 21px; font-weight: 800; margin: 0 0 20px; letter-spacing: -0.2px; }
+  .w-mobile .ebody h1 { font-size: 19px; }
+  .greet, .intro { text-align: left; font-size: 13.5px; color: #2c3350; line-height: 1.6; }
+  .greet { margin: 0 0 12px; }
+  .intro { margin: 0 0 18px; }
+  .intro b { color: #14172e; }
+
+  .card { background: #fff; border: 1px solid #e7e9f2; border-radius: 10px; text-align: left; margin-bottom: 20px; }
+  .card .chead { font-size: 13.5px; font-weight: 800; padding: 14px 16px 10px; border-bottom: 1px solid #f1f3fa; }
+
+  .erow { display: flex; gap: 12px; padding: 13px 16px; align-items: center; }
+  .erow + .erow { border-top: 1px solid #f1f3fa; }
+  .eav {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; font-weight: 700; color: #fff;
+  }
+  .etile {
+    width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0; background: #101031;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .erow .m { flex: 1; min-width: 0; }
+  .erow .r1 { display: flex; align-items: baseline; gap: 8px; }
+  .erow .who { font-size: 13.5px; font-weight: 700; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .newchip { font-size: 9.5px; font-weight: 700; background: #fdeaea; color: #b42318; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+  .erow .snip { font-size: 12.5px; color: #6b7280; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .erow .snip b { color: #454b6e; font-weight: 600; }
+  .erow .view { font-size: 12px; font-weight: 600; color: #4353ff; text-decoration: none; flex-shrink: 0; }
+
+  .ctarow { display: flex; justify-content: center; }
+  .cta {
+    display: inline-block; background: #4353ff; color: #fff;
+    font-size: 13.5px; font-weight: 700; text-decoration: none;
+    padding: 11px 34px; border-radius: 8px;
+  }
+  .below-cta { font-size: 11.5px; color: #8a93b2; margin-top: 13px; }
+
+  .efoot { background: #f6f8fd; padding: 20px 34px 24px; text-align: left; border-top: 1px solid #eef0f6; }
+  .w-mobile .efoot { padding: 18px 20px 22px; }
+  .efoot .ft { font-size: 12px; font-weight: 800; margin-bottom: 5px; }
+  .efoot .fd { font-size: 11px; color: #6b7280; line-height: 1.6; margin-bottom: 14px; }
+  .efoot .frow { display: flex; align-items: center; justify-content: space-between; }
+  .logobox { background: #101031; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 3px 10px; transform: scaleX(-1); display: inline-block; }
+  .socials { font-size: 12px; color: #454b6e; letter-spacing: 6px; }
+  .copyr { font-size: 10.5px; color: #9aa1bd; margin-top: 10px; }
+</style>
+
+<div class="stage">
+
+  <!-- ============ DESKTOP — digest (1..N) ============ -->
+  <div class="col">
+    <div class="frame-label w-desktop">Desktop</div>
+    <div class="scenario">Unread Messages Digest — multiple conversations</div>
+    <div class="email w-desktop">
+      <div class="ehead"><span class="wordmark">real</span><span class="rcicon">🏠</span></div>
+      <div class="ebody">
+        <div class="eillo">📬</div>
+        <h1>You Have New Messages</h1>
+        <p class="greet">Hi Sarah,</p>
+        <p class="intro">While you were away, you received <b>11 new messages</b> across <b>4 conversations</b> in Referral Central.</p>
+        <div class="card">
+          <div class="chead">Unread Conversations</div>
+          <div class="erow">
+            <div class="eav" style="background:#92600a;">KM</div>
+            <div class="m">
+              <div class="r1"><span class="who">Kacey Musgraves</span><span class="newchip">2 NEW</span></div>
+              <div class="snip">Happy to connect! What price band do you usually refer in the Dallas metro?</div>
+            </div>
+            <a class="view" href="#">View →</a>
+          </div>
+          <div class="erow">
+            <div class="etile">🏠</div>
+            <div class="m">
+              <div class="r1"><span class="who">Relocation buyer — Birmingham</span><span class="newchip">8 NEW</span></div>
+              <div class="snip"><b>Brett Young</b> · Great, I've accepted the referral. I'll reach out to your client…</div>
+            </div>
+            <a class="view" href="#">View →</a>
+          </div>
+          <div class="erow">
+            <div class="etile">🏠</div>
+            <div class="m">
+              <div class="r1"><span class="who">Craigsville, West Virginia</span><span class="newchip">1 NEW</span></div>
+              <div class="snip"><b>Luke Combs</b> · I'm evaluating the latest referral you sent over. Will confirm…</div>
+            </div>
+            <a class="view" href="#">View →</a>
+          </div>
+          <div class="erow">
+            <div class="eav" style="background:#0e7490;">JP</div>
+            <div class="m">
+              <div class="r1"><span class="who">Jon Pardi</span><span class="newchip">1 NEW</span></div>
+              <div class="snip">Appreciate it — always open to referral partners.</div>
+            </div>
+            <a class="view" href="#">View →</a>
+          </div>
+        </div>
+        <div class="ctarow"><a class="cta" href="#">Open Inbox</a></div>
+        <div class="below-cta">You'll only get this email when you're away from Referral Central — at most once a day.</div>
+      </div>
+      <div class="efoot">
+        <div class="ft">About Real</div>
+        <div class="fd">Real creates financial opportunities for agents through better commission splits, best-in-class tech, revenue sharing and equity incentives.</div>
+        <div class="frow"><span class="logobox">real</span><span class="socials">in 𝕏 ▶ ◎ f</span></div>
+        <div class="copyr">© 2026 Real</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MOBILE — digest ============ -->
+  <div class="col">
+    <div class="frame-label w-mobile">Mobile</div>
+    <div class="scenario">Unread Messages Digest — multiple conversations</div>
+    <div class="email w-mobile">
+      <div class="ehead"><span class="wordmark">real</span><span class="rcicon">🏠</span></div>
+      <div class="ebody">
+        <div class="eillo">📬</div>
+        <h1>You Have New Messages</h1>
+        <p class="greet">Hi Sarah,</p>
+        <p class="intro">While you were away, you received <b>11 new messages</b> across <b>4 conversations</b>.</p>
+        <div class="card">
+          <div class="chead">Unread Conversations</div>
+          <div class="erow">
+            <div class="eav" style="background:#92600a;">KM</div>
+            <div class="m">
+              <div class="r1"><span class="who">Kacey Musgraves</span><span class="newchip">2</span></div>
+              <div class="snip">Happy to connect! What price band do…</div>
+            </div>
+          </div>
+          <div class="erow">
+            <div class="etile">🏠</div>
+            <div class="m">
+              <div class="r1"><span class="who">Relocation buyer — Birmi…</span><span class="newchip">8</span></div>
+              <div class="snip"><b>Brett</b> · Great, I've accepted the referral…</div>
+            </div>
+          </div>
+          <div class="erow">
+            <div class="etile">🏠</div>
+            <div class="m">
+              <div class="r1"><span class="who">Craigsville, West Virginia</span><span class="newchip">1</span></div>
+              <div class="snip"><b>Luke</b> · I'm evaluating the latest referral…</div>
+            </div>
+          </div>
+          <div class="erow">
+            <div class="eav" style="background:#0e7490;">JP</div>
+            <div class="m">
+              <div class="r1"><span class="who">Jon Pardi</span><span class="newchip">1</span></div>
+              <div class="snip">Appreciate it — always open to referral…</div>
+            </div>
+          </div>
+        </div>
+        <div class="ctarow"><a class="cta" href="#" style="width:100%; text-align:center;">Open Inbox</a></div>
+        <div class="below-cta">Sent only while you're away — at most once a day.</div>
+      </div>
+      <div class="efoot">
+        <div class="ft">About Real</div>
+        <div class="fd">Real creates financial opportunities for agents through better commission splits, best-in-class tech, revenue sharing and equity incentives.</div>
+        <div class="frow"><span class="logobox">real</span><span class="socials">in 𝕏 ▶ ◎ f</span></div>
+        <div class="copyr">© 2026 Real</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DESKTOP — single unread ============ -->
+  <div class="col">
+    <div class="frame-label w-desktop">Desktop</div>
+    <div class="scenario">Same template — single unread (singular copy, one row)</div>
+    <div class="email w-desktop">
+      <div class="ehead"><span class="wordmark">real</span><span class="rcicon">🏠</span></div>
+      <div class="ebody">
+        <div class="eillo">📬</div>
+        <h1>You Have a New Message</h1>
+        <p class="greet">Hi Sarah,</p>
+        <p class="intro">While you were away, <b>Riley Green</b> sent you a message in Referral Central.</p>
+        <div class="card">
+          <div class="chead">Unread Conversation</div>
+          <div class="erow">
+            <div class="eav" style="background:#14532d;">RG</div>
+            <div class="m">
+              <div class="r1"><span class="who">Riley Green</span><span class="newchip">1 NEW</span></div>
+              <div class="snip">That's exactly what they're after. Sending the referral over now, I'll include…</div>
+            </div>
+            <a class="view" href="#">View →</a>
+          </div>
+        </div>
+        <div class="ctarow"><a class="cta" href="#">Open Inbox</a></div>
+        <div class="below-cta">You'll only get this email when you're away from Referral Central — at most once a day.</div>
+      </div>
+      <div class="efoot">
+        <div class="ft">About Real</div>
+        <div class="fd">Real creates financial opportunities for agents through better commission splits, best-in-class tech, revenue sharing and equity incentives.</div>
+        <div class="frow"><span class="logobox">real</span><span class="socials">in 𝕏 ▶ ◎ f</span></div>
+        <div class="copyr">© 2026 Real</div>
+      </div>
+    </div>
+  </div>
+</div>
